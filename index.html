@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>蕉焦大老二 - 樹狀晉級賽制</title>
+<title>蕉焦賓果晉級賽制</title>
 <style>
 *{box-sizing:border-box;font-family:"Segoe UI","Microsoft JhengHei",sans-serif;user-select:none}
 body{margin:0;min-height:100vh;background:#0f5132;color:#fff;padding:14px}
@@ -118,7 +118,7 @@ setInterval(function() {
 <div id="remoteAudioContainer" style="display:none;"></div>
 
 <div id="setup" class="card">
-<h1 id="mainTitle">🔢 數字賓果 樹狀晉級賽制</h1>
+<h1 id="mainTitle">🔢 數字賓果晉級賽制</h1>
 <p id="setupDesc">歡迎加入樹狀晉級數字賓果對決！請輸入暱稱與通關碼進入等候區，由管理員在控制台為您指派進行 16強淘汰賽房間！</p>
 
 <div class="field">
@@ -170,18 +170,18 @@ setInterval(function() {
 <div class="row">
 <button id="joinBtn" type="button" class="primary">進入等候區</button>
 <button id="adminBtn" class="success" onclick="admin()">管理員控制台</button>
-<button id="lobbyBtn" class="gray" onclick="window.location.href='https://sile9999.github.io/all-in-one-games/'">回到遊戲大廳</button>
+
 </div>
 <div id="joinStatus" style="margin-top:8px;font-size:13px;color:#475569"></div>
 
 <div id="adminBox" class="hidden" style="margin-top:14px;border-top:1px solid #ddd;padding-top:12px">
 <div class="field"><label>管理員密碼</label><input id="pwd" class="input" type="password"></div>
 <div class="field"><label>防亂入房間通關碼（留空代表不設限）</label><input id="roomPasscode" class="input" placeholder="例如：8888"></div>
-<button class="success" style="width:100%;margin-top:10px" onclick="createRoom()">生成樹狀晉級賽房間 (16強/8強/4強/總決賽)</button>
+<button class="success" style="width:100%;margin-top:10px" onclick="createRoom()">生成樹狀晉級賽房間</button>
 </div>
 
 <div id="roomInfo" class="hidden" style="margin-top:12px;border-top:1px solid #ddd;padding-top:12px">
-  <div style="font-weight:bold;margin-bottom:6px">🔗 玩家專用連結 (一律進入等候區)：</div>
+  <div style="font-weight:bold;margin-bottom:6px">🔗 玩家專用連結：</div>
   <div class="row">
     <input id="lobbyLinkInput" class="input" style="flex:1" readonly>
     <button class="primary" onclick="copyLobbyInfo()">複製等候區連結</button>
@@ -207,7 +207,7 @@ setInterval(function() {
     </div>
   </div>
 
-  <div style="margin-top:14px;font-weight:bold">🏢 樹狀晉級賽房間清單 (點擊房間卡片可指定選取)：</div>
+  <div style="margin-top:14px;font-weight:bold">🏢 樹狀晉級賽房間清單：</div>
   <div id="createdRoomsList"></div>
 
   <div class="lobby-box">
@@ -252,7 +252,7 @@ setInterval(function() {
 <div class="table" style="margin-top:12px;">
 <div class="center">
   <div class="big" id="turnText">等待玩家...</div>
-  <div class="small" id="roundText">等待管理員指派對戰並由管理者/房主開始遊戲</div>
+  <div class="small" id="roundText">等待管理員指派對戰</div>
   <div class="timer-box" id="timerBox"></div>
 </div><div id="discards" class="discard"></div>
 
@@ -1926,7 +1926,7 @@ function render(){
 
    const isTalkingClass = activeTalkingPlayers.has(id) ? "talking" : "";
    const isWinnerGlowClass = p.status === "win" ? "winner-glow" : "";
-   const isHostBadge = p.index === 0 ? ' 👑房主' : '';
+   const isHostBadge = p.index === 0 ? ' ' : '';
 
    return `<div id="player_card_${id}" class="player ${(id===playerId?"me ":"")+(p.index===roomData.turn&&roomData.status==="playing"?"turn ":"")+isTalkingClass} ${isWinnerGlowClass}">
      ${emojiOverlayHtml}
