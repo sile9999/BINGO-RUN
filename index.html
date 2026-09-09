@@ -207,7 +207,7 @@ setInterval(function() {
     </div>
   </div>
 
-  <div style="margin-top:14px;font-weight:bold">🏢 樹狀晉級賽房間清單：</div>
+  <div style="margin-top:14px;font-weight:bold">🏢 晉級賽房間清單：</div>
   <div id="createdRoomsList"></div>
 
   <div class="lobby-box">
@@ -218,8 +218,8 @@ setInterval(function() {
 
   <!-- 依照圖片風格重構的賽事晉級樹狀圖 -->
   <div id="adminTournamentTreeBox" class="lobby-box" style="background:#f8fafc; border-color:#0284c7; margin-top:12px;">
-    <div style="font-weight:bold;font-size:16px;color:#0369a1;margin-bottom:4px">🌳 賽事晉級樹狀圖與勝者總覽</div>
-    <div style="font-size:12px;color:#64748b;margin-bottom:8px">即時展示 16強 ➔ 8強 ➔ 4強 ➔ 總決賽 的對戰與晉級狀態（對稱樹狀結構）。</div>
+    <div style="font-weight:bold;font-size:16px;color:#0369a1;margin-bottom:4px">🌳 賽事晉級與勝者總覽</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:8px">即時展示 16強 ➔ 8強 ➔ 4強 ➔ 總決賽 的對戰與晉級狀態。</div>
     <div id="adminTournamentTreeContent" style="font-size:13px; overflow-x:auto;"></div>
   </div>
 </div>
@@ -228,7 +228,7 @@ setInterval(function() {
 <div id="game" class="container hidden">
 <div class="card">
 <div class="row" style="justify-content:space-between">
-  <h2>🔢 數字賓果 樹狀賽制 <b id="gameRoom"></b></h2> 
+  <h2>🔢 數字賓果  <b id="gameRoom"></b></h2> 
   <div class="row" style="gap: 12px; align-items: center;">
     <!-- 發牌音效開關 -->
     <label style="font-size: 13px; font-weight: normal; display: flex; align-items: center; gap: 4px; cursor: pointer;">
@@ -920,7 +920,7 @@ async function copyText(text){
 window.copyLobbyInfo = async () => {
  const link = el("lobbyLinkInput").value;
  const passcode = el("roomPasscode").value.trim() || "無";
- const formattedText = `🔢 數字賓果 樹狀晉級賽 🔢\n連結 : ${link}\n通關密碼 : ${passcode}\n※規則: 進入等候區後由管理員指派進入賽事！`;
+ const formattedText = `🔢 數字賓果 晉級賽 🔢\n連結 : ${link}\n通關密碼 : ${passcode}\n備註:\n※規則: 進入等候區後由管理員指派進入賽事！`;
  
  const success = await copyText(formattedText);
  alert(success ? "已成功複製房間發送格式！" : "複製失敗，請手動複製：\n" + formattedText);
