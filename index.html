@@ -81,7 +81,7 @@ button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:point
 .admin-room-players {display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px;}
 .admin-room-player-card {background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; font-size: 12px; position: relative;}
 
-/* 圖片風格的賽事樹狀圖專用樣式 */
+/* 圖片風格的賽事圖專用樣式 */
 .tree-container { background: #ffffff; color: #1e293b; padding: 16px; border-radius: 12px; overflow-x: auto; border: 2px solid #0284c7; }
 .tree-trophy-header { text-align: center; margin-bottom: 15px; }
 .tree-trophy-icon { font-size: 32px; }
@@ -121,13 +121,11 @@ setInterval(function() {
 <h1 id="mainTitle">🔢 數字賓果晉級賽制</h1>
 <p id="setupDesc">歡迎加入晉級數字賓果對決！請輸入暱稱與通關碼進入等候區，由管理員在控制台為您指派進行 16強淘汰賽房間！</p>
 
-<!-- 新增：比賽開始後登入直接顯示的提示文字區塊 -->
-<div id="gameStartedLateNotice" class="hidden" style="background:#fee2e2; border:2px solid #dc2626; padding:20px; border-radius:12px; text-align:center; margin-bottom:15px; color:#991b1b;">
-  <h2 style="margin:0 0 8px; font-size:22px;">⚠️ 此輪比賽已經開始，下次請早</h2>
-  <p style="margin:0; font-size:15px;">很抱歉，您抵達或登入的時間已超過比賽開始時間，本輪賽事已經進行中，無法再加入等候區。</p>
+<!-- 比賽開始後才登入玩家的專用提示區塊 (隱藏預設) -->
+<div id="gameAlreadyStartedNotice" class="hidden" style="background:#fee2e2; border:2px solid #dc2626; color:#991b1b; padding:16px; border-radius:10px; text-align:center; font-weight:bold; font-size:16px; margin-bottom:12px;">
+  此輪比賽已經開始，下次請早
 </div>
 
-<div id="normalLoginFormGroup">
 <div class="field">
   <label id="nameLabel">你的暱稱</label>
   <input id="name" class="input" placeholder="請輸入暱稱" autocomplete="off">
@@ -136,7 +134,6 @@ setInterval(function() {
 <div class="field">
   <label>房間通關碼（如管理者有設定則必填）</label>
   <input id="joinPasscode" class="input" placeholder="請輸入通關碼" autocomplete="off">
-</div>
 </div>
 
 <!-- 管理者全域預設賽局設定面板 -->
@@ -175,7 +172,7 @@ setInterval(function() {
   </div>
 </div>
 
-<div class="row" id="setupActionButtonsRow">
+<div class="row">
 <button id="joinBtn" type="button" class="primary">進入等候區</button>
 <button id="adminBtn" class="success" onclick="admin()">管理員控制台</button>
 </div>
@@ -184,7 +181,7 @@ setInterval(function() {
 <div id="adminBox" class="hidden" style="margin-top:14px;border-top:1px solid #ddd;padding-top:12px">
 <div class="field"><label>管理員密碼</label><input id="pwd" class="input" type="password"></div>
 <div class="field"><label>防亂入房間通關碼（留空代表不設限）</label><input id="roomPasscode" class="input" placeholder="例如：8888"></div>
-<button class="success" style="width:100%;margin-top:10px" onclick="createRoom()">生成樹狀晉級賽房間</button>
+<button class="success" style="width:100%;margin-top:10px" onclick="createRoom()">生成晉級賽房間</button>
 </div>
 
 <div id="roomInfo" class="hidden" style="margin-top:12px;border-top:1px solid #ddd;padding-top:12px">
@@ -229,7 +226,7 @@ setInterval(function() {
     <div id="adminLobbyUsers"></div>
   </div>
 
-  <!-- 賽事晉級樹狀圖 -->
+  <!-- 賽事晉級圖 -->
   <div id="adminTournamentTreeBox" class="lobby-box" style="background:#f8fafc; border-color:#0284c7; margin-top:12px;">
     <div style="font-weight:bold;font-size:16px;color:#0369a1;margin-bottom:4px">🌳 賽事晉級與勝者總覽</div>
     <div style="font-size:12px;color:#64748b;margin-bottom:8px">即時展示 16強 ➔ 8強 ➔ 4強 ➔ 總決賽 的對戰與晉級狀態。</div>
@@ -293,7 +290,7 @@ setInterval(function() {
 <div class="card"><h3>遊戲紀錄</h3><div id="log" class="log"></div></div>
 <div class="card lb"><h3 id="lbTitle">🏆 勝場排行榜</h3><div id="leaderboard"></div></div>
 
-<!-- 玩家頁面下方即時同步顯示賽事晉級樹狀圖 -->
+<!-- 玩家頁面下方即時同步顯示賽事晉級圖 -->
 <div class="card" id="playerTournamentTreeCard">
   <h3 style="color:#0369a1; margin-bottom:4px;">🌳 賽事晉級與勝者總覽</h3>
   <div style="font-size:12px; color:#64748b; margin-bottom:8px;">即時展示 16強 ➔ 8強 ➔ 4強 ➔ 總決賽 的對戰與晉級狀態。</div>
@@ -312,7 +309,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const nameLabel = document.getElementById("nameLabel");
     const adminGlobalSettingsDiv = document.getElementById("adminGlobalSettingsDiv");
 
-    if (mainTitle) mainTitle.innerText = "🎮 玩家加入晉級賽";
+    if (mainTitle) mainTitle.innerText = "🎮 玩家加入 晉級賽";
     if (setupDesc) setupDesc.innerText = "請輸入暱稱與通關碼進入等候區，等待管理員將您指派至對戰房間！";
     if (adminBtn) adminBtn.style.display = "none";
     if (lobbyBtn) lobbyBtn.style.display = "none";
@@ -889,21 +886,16 @@ function listenToGlobalSettings() {
       timeInput.value = globalTournamentStartTime;
     }
 
-    // 新增：檢查如果目前時間已經過了比賽開始時間，直接在登入頁隱藏表單並顯示「此輪比賽已經開始，下次請早」
-    if (globalTournamentStartTime) {
+    // 【新增檢核點】：當在 mode=player 頁面時，若抓到全域設定的比賽開始時間且已超過，自動顯示「此輪比賽已經開始，下次請早」文字區塊
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("mode") === "player" && globalTournamentStartTime) {
       const targetTime = new Date(globalTournamentStartTime).getTime();
       const now = Date.now();
       if (now >= targetTime) {
-        const urlParams = new URLSearchParams(window.location.search);
-        // 如果是玩家模式，或是尚未加入房間且非管理員觀看
-        if (urlParams.get("mode") === "player" || (!roomId && !isAdmin)) {
-          const noticeEl = el("gameStartedLateNotice");
-          const formGroupEl = el("normalLoginFormGroup");
-          const actionBtnRowEl = el("setupActionButtonsRow");
-          if (noticeEl) noticeEl.classList.remove("hidden");
-          if (formGroupEl) formGroupEl.classList.add("hidden");
-          if (actionBtnRowEl) actionBtnRowEl.classList.add("hidden");
-        }
+        const noticeEl = el("gameAlreadyStartedNotice");
+        if (noticeEl) noticeEl.classList.remove("hidden");
+        const joinBtnEl = el("joinBtn");
+        if (joinBtnEl) joinBtnEl.disabled = true; // 選擇性：時間到後停用加入按鈕
       }
     }
   });
@@ -963,7 +955,7 @@ window.createRoom=async()=>{
  isAdmin=true; viewMode="admin";
  
  listenToLobbyAndRooms();
- alert(`成功生成樹狀晉級賽制房間（16強、8強、4強、總決賽）！` + (passcode ? `\n通關碼為：${passcode}` : ''));
+ alert(`成功生成晉級賽制房間（16強、8強、4強、總決賽）！` + (passcode ? `\n通關碼為：${passcode}` : ''));
 };
 
 async function copyText(text){
@@ -1016,15 +1008,11 @@ function initTournamentTimeChecker() {
     if (now >= targetTime) {
       if (playerCountdownEl) playerCountdownEl.textContent = "🚀 比賽進行中 / 已開始";
       
-      // 新增：當時間已到，玩家端如果在登入頁還沒進等候區，直接顯示「此輪比賽已經開始，下次請早」
+      // 當在 player 頁面且時間到時，若還留在報名畫面，動態顯示「此輪比賽已經開始，下次請早」區塊
       const urlParams = new URLSearchParams(window.location.search);
-      if ((urlParams.get("mode") === "player" || !isAdmin) && !roomId) {
-        const noticeEl = el("gameStartedLateNotice");
-        const formGroupEl = el("normalLoginFormGroup");
-        const actionBtnRowEl = el("setupActionButtonsRow");
+      if (urlParams.get("mode") === "player") {
+        const noticeEl = el("gameAlreadyStartedNotice");
         if (noticeEl) noticeEl.classList.remove("hidden");
-        if (formGroupEl) formGroupEl.classList.add("hidden");
-        if (actionBtnRowEl) actionBtnRowEl.classList.add("hidden");
       }
 
       if (scheduledMatchmakingInterval && viewMode === "admin") {
@@ -1203,20 +1191,6 @@ function initPlayerRoomChecker() {
 }
 
 window.joinLobby=async()=>{
- // 新增：點擊進入等候區時雙重檢查是否已過比賽開始時間
- if (globalTournamentStartTime) {
-   const targetTime = new Date(globalTournamentStartTime).getTime();
-   if (Date.now() >= targetTime) {
-     const noticeEl = el("gameStartedLateNotice");
-     const formGroupEl = el("normalLoginFormGroup");
-     const actionBtnRowEl = el("setupActionButtonsRow");
-     if (noticeEl) noticeEl.classList.remove("hidden");
-     if (formGroupEl) formGroupEl.classList.add("hidden");
-     if (actionBtnRowEl) actionBtnRowEl.classList.add("hidden");
-     return alert("此輪比賽已經開始，無法再進入等候區！");
-   }
- }
-
  unlockiOSAudio();
  const status=el("joinStatus");
  const setStatus=(t,err=false)=>{ if(status){ status.textContent=t; status.style.color=err?"#b91c1c":"#475569"; } };
