@@ -119,8 +119,15 @@ setInterval(function() {
 
 <div id="setup" class="card">
 <h1 id="mainTitle">🔢 數字賓果晉級賽制</h1>
-<p id="setupDesc">歡迎加入樹狀晉級數字賓果對決！請輸入暱稱與通關碼進入等候區，由管理員在控制台為您指派進行 16強淘汰賽房間！</p>
+<p id="setupDesc">歡迎加入晉級數字賓果對決！請輸入暱稱與通關碼進入等候區，由管理員在控制台為您指派進行 16強淘汰賽房間！</p>
 
+<!-- 新增：比賽開始後登入直接顯示的提示文字區塊 -->
+<div id="gameStartedLateNotice" class="hidden" style="background:#fee2e2; border:2px solid #dc2626; padding:20px; border-radius:12px; text-align:center; margin-bottom:15px; color:#991b1b;">
+  <h2 style="margin:0 0 8px; font-size:22px;">⚠️ 此輪比賽已經開始，下次請早</h2>
+  <p style="margin:0; font-size:15px;">很抱歉，您抵達或登入的時間已超過比賽開始時間，本輪賽事已經進行中，無法再加入等候區。</p>
+</div>
+
+<div id="normalLoginFormGroup">
 <div class="field">
   <label id="nameLabel">你的暱稱</label>
   <input id="name" class="input" placeholder="請輸入暱稱" autocomplete="off">
@@ -129,6 +136,7 @@ setInterval(function() {
 <div class="field">
   <label>房間通關碼（如管理者有設定則必填）</label>
   <input id="joinPasscode" class="input" placeholder="請輸入通關碼" autocomplete="off">
+</div>
 </div>
 
 <!-- 管理者全域預設賽局設定面板 -->
@@ -167,7 +175,7 @@ setInterval(function() {
   </div>
 </div>
 
-<div class="row">
+<div class="row" id="setupActionButtonsRow">
 <button id="joinBtn" type="button" class="primary">進入等候區</button>
 <button id="adminBtn" class="success" onclick="admin()">管理員控制台</button>
 </div>
@@ -176,7 +184,7 @@ setInterval(function() {
 <div id="adminBox" class="hidden" style="margin-top:14px;border-top:1px solid #ddd;padding-top:12px">
 <div class="field"><label>管理員密碼</label><input id="pwd" class="input" type="password"></div>
 <div class="field"><label>防亂入房間通關碼（留空代表不設限）</label><input id="roomPasscode" class="input" placeholder="例如：8888"></div>
-<button class="success" style="width:100%;margin-top:10px" onclick="createRoom()">生成晉級賽房間</button>
+<button class="success" style="width:100%;margin-top:10px" onclick="createRoom()">生成樹狀晉級賽房間</button>
 </div>
 
 <div id="roomInfo" class="hidden" style="margin-top:12px;border-top:1px solid #ddd;padding-top:12px">
@@ -880,6 +888,24 @@ function listenToGlobalSettings() {
     if (timeInput && globalTournamentStartTime && !timeInput.value) {
       timeInput.value = globalTournamentStartTime;
     }
+
+    // 新增：檢查如果目前時間已經過了比賽開始時間，直接在登入頁隱藏表單並顯示「此輪比賽已經開始，下次請早」
+    if (globalTournamentStartTime) {
+      const targetTime = new Date(globalTournamentStartTime).getTime();
+      const now = Date.now();
+      if (now >= targetTime) {
+        const urlParams = new URLSearchParams(window.location.search);
+        // 如果是玩家模式，或是尚未加入房間且非管理員觀看
+        if (urlParams.get("mode") === "player" || (!roomId && !isAdmin)) {
+          const noticeEl = el("gameStartedLateNotice");
+          const formGroupEl = el("normalLoginFormGroup");
+          const actionBtnRowEl = el("setupActionButtonsRow");
+          if (noticeEl) noticeEl.classList.remove("hidden");
+          if (formGroupEl) formGroupEl.classList.add("hidden");
+          if (actionBtnRowEl) actionBtnRowEl.classList.add("hidden");
+        }
+      }
+    }
   });
 }
 
@@ -961,7 +987,10 @@ async function copyText(text){
 window.copyLobbyInfo = async () => {
  const link = el("lobbyLinkInput").value;
  const passcode = el("roomPasscode").value.trim() || "無";
- const formattedText = `🔢 數字賓果 晉級賽 🔢\n連結 : ${link}\n通關密碼 : ${passcode}\n備註:\n※規則: 進入等候區後由管理員指派進入賽事！`;
+ const defaultGridSize = el("adminGlobalGridSize")?.value || "5";
+ const defaultTargetLines = el("adminGlobalTargetLines")?.value || "1";
+ const defaultTargetWins = el("adminGlobalTargetWins")?.value || "4";
+ const formattedText = `🔢 數字賓果 晉級賽 🔢\n連結 : ${link}\n通關密碼 : ${passcode}\n賽局設定 : 盤面 ${defaultGridSize}x${defaultGridSize} / 連線 ${defaultTargetLines} 條 / 勝 ${defaultTargetWins} 場結束\n備註:\n※規則: 進入等候區後由管理員指派進入賽事！`;
  
  const success = await copyText(formattedText);
  alert(success ? "已成功複製房間發送格式！" : "複製失敗，請手動複製：\n" + formattedText);
@@ -987,6 +1016,17 @@ function initTournamentTimeChecker() {
     if (now >= targetTime) {
       if (playerCountdownEl) playerCountdownEl.textContent = "🚀 比賽進行中 / 已開始";
       
+      // 新增：當時間已到，玩家端如果在登入頁還沒進等候區，直接顯示「此輪比賽已經開始，下次請早」
+      const urlParams = new URLSearchParams(window.location.search);
+      if ((urlParams.get("mode") === "player" || !isAdmin) && !roomId) {
+        const noticeEl = el("gameStartedLateNotice");
+        const formGroupEl = el("normalLoginFormGroup");
+        const actionBtnRowEl = el("setupActionButtonsRow");
+        if (noticeEl) noticeEl.classList.remove("hidden");
+        if (formGroupEl) formGroupEl.classList.add("hidden");
+        if (actionBtnRowEl) actionBtnRowEl.classList.add("hidden");
+      }
+
       if (scheduledMatchmakingInterval && viewMode === "admin") {
         clearInterval(scheduledMatchmakingInterval);
         scheduledMatchmakingInterval = null;
@@ -1163,6 +1203,20 @@ function initPlayerRoomChecker() {
 }
 
 window.joinLobby=async()=>{
+ // 新增：點擊進入等候區時雙重檢查是否已過比賽開始時間
+ if (globalTournamentStartTime) {
+   const targetTime = new Date(globalTournamentStartTime).getTime();
+   if (Date.now() >= targetTime) {
+     const noticeEl = el("gameStartedLateNotice");
+     const formGroupEl = el("normalLoginFormGroup");
+     const actionBtnRowEl = el("setupActionButtonsRow");
+     if (noticeEl) noticeEl.classList.remove("hidden");
+     if (formGroupEl) formGroupEl.classList.add("hidden");
+     if (actionBtnRowEl) actionBtnRowEl.classList.add("hidden");
+     return alert("此輪比賽已經開始，無法再進入等候區！");
+   }
+ }
+
  unlockiOSAudio();
  const status=el("joinStatus");
  const setStatus=(t,err=false)=>{ if(status){ status.textContent=t; status.style.color=err?"#b91c1c":"#475569"; } };
@@ -1842,23 +1896,16 @@ window.playCards = async function() {
     marked: newMarked,
     turn: nextTurn,
     turnStartTime: Date.now(),
-    lastPlay: {
-      playerId,
-      playerName: me.name,
-      num: pickNum,
-      timestamp: Date.now()
-    },
+    lastPlay: { playerId: playerId, playerName: me.name, num: pickNum, timestamp: Date.now() },
     logs: [...(roomData.logs || []), `${me.name} 叫號了數字：${pickNum}`].slice(-80)
   };
 
-  selectedSet.clear();
-
   let winnerId = null;
-  const players = { ...(roomData.players || {}) };
   const gridSize = Number(roomData.gridSize || 5);
   const targetLines = Number(roomData.targetLines || 1);
   const targetWins = Number(roomData.targetWins || 4);
 
+  const updatedPlayers = { ...(roomData.players || {}) };
   Object.entries(roomData.hands || {}).forEach(([pId, pCard]) => {
     const pMarked = newMarked[pId] || [];
     if (checkBingo(pCard, pMarked, gridSize) >= targetLines) {
@@ -1868,189 +1915,196 @@ window.playCards = async function() {
 
   if (winnerId) {
     playSound('win');
-    const newWins = (players[winnerId].wins || 0) + 1;
-    players[winnerId] = { ...players[winnerId], status: "win", wins: newWins };
-
+    const newWins = (updatedPlayers[winnerId].wins || 0) + 1;
+    updatedPlayers[winnerId] = { ...updatedPlayers[winnerId], status: "win", wins: newWins };
+    updates.players = updatedPlayers;
     const currentGRound = (roomData.currentGameRound || 1) + 1;
-    updates.players = players;
 
     if (newWins < targetWins) {
       updates.currentGameRound = currentGRound;
       updates.status = "round_ended";
-      updates.logs.push(`🎉 ${players[winnerId].name} 賓果連線成功（目前累積 ${newWins}/${targetWins} 勝）！狀態發光 5 秒後開始下一局...`);
-      
-      await update(ref(db, "rooms_v4/" + roomId), updates);
-
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      const freshSnap = await get(ref(db, "rooms_v4/" + roomId));
-      if (freshSnap.exists()) {
-        const fRoom = freshSnap.val();
-        if (fRoom.status === "round_ended") {
-          await tryStartGame(true);
-        }
-      }
+      updates.logs.push(`🎉 玩家 ${updatedPlayers[winnerId].name} 賓果連線成功（目前累積 ${newWins}/${targetWins} 勝）！`);
+      selectedSet.clear();
+      await update(ref(db, `rooms_v4/${roomId}`), updates);
       return;
     } else {
       updates.status = "ended";
       updates.winnerId = winnerId;
-      updates.logs.push(`🏆 恭喜 ${players[winnerId].name} 率先取得 ${targetWins} 勝，贏得晉級賽勝利！`);
+      updates.logs.push(`🏆 玩家 ${updatedPlayers[winnerId].name} 率先達成 ${targetWins} 勝，贏得本輪晉級賽勝利！`);
       
-      await update(ref(db, "rooms_v4/" + roomId), updates);
-      await advanceWinnerToNextRoom(roomId, winnerId, players[winnerId].name);
+      await advanceWinnerToNextRoom(roomId, winnerId, updatedPlayers[winnerId].name);
+      selectedSet.clear();
+      await update(ref(db, `rooms_v4/${roomId}`), updates);
       return;
     }
   }
 
-  await update(ref(db, "rooms_v4/" + roomId), updates);
+  selectedSet.clear();
+  await update(ref(db, `rooms_v4/${roomId}`), updates);
 };
 
-window.passTurn = async function() {};
+window.nextRound = async function() {
+  if (viewMode !== "admin") return;
+  await tryStartGame(true);
+};
+
+function esc(s){ return s?s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"):"" }
 
 function render(){
- el("setup").classList.add("hidden"); el("game").classList.remove("hidden");
- el("gameRoom").textContent=roomData.name || roomId;
- const targetWins = Number(roomData.targetWins || 4);
- if(el("gameRoundBadge")) el("gameRoundBadge").textContent = `第 ${roomData.currentGameRound || 1} 局 (目標 ${targetWins} 勝)`;
- if(el("lbTitle")) el("lbTitle").textContent = `🏆 本桌勝場排行榜 (目標 ${targetWins} 勝)`;
+ if(!roomData) return;
+ el("gameRoom").textContent = `(${roomData.name || roomId})`;
+ el("gameRoundBadge").textContent = `第 ${roomData.currentGameRound || 1} 局 (目標 ${roomData.targetWins || 4}勝)`;
 
- const ps=Object.entries(roomData.players||{}).sort((a,b)=>Number(a[1].index)-Number(b[1].index));
- const now = Date.now();
+ const players = roomData.players || {};
+ const playerEntries = Object.entries(players).sort((a,b)=>Number(a[1].index)-Number(b[1].index));
+ const currentTurn = Number(roomData.turn || 0);
 
- el("players").innerHTML=ps.map(([id, p])=>{
-   const pCard = (roomData.hands?.[id] || []);
-   const pMarked = (roomData.marked?.[id] || []);
-   const gridSize = Number(roomData.gridSize || 5);
-   const targetLines = Number(roomData.targetLines || 1);
-   const lines = checkBingo(pCard, pMarked, gridSize);
-
-   const state= p.status==="win" ? "🏆 本局獲勝" : roomData.status==="playing" && p.index===roomData.turn ? "🔢 叫號中" : "等待中";
-   const kickBtn = (viewMode === "admin") ? `<button class="danger kick-btn" onclick="kickPlayer('${id}', '${esc(p.name)}')">移除</button>` : '';
+ let pHtml = "";
+ playerEntries.forEach(([id, p], idx) => {
+   const isMe = (id === playerId);
+   const isMyTurn = (idx === currentTurn);
+   const cardClass = `player ${isMe ? 'me' : ''} ${isMyTurn ? 'turn' : ''} ${p.status === 'win' ? 'winner-glow' : ''}`;
    
-   const online = p.isOfflineBot ? false : isUserOnline(id);
-   const dotHtml = `<span class="status-dot ${online?'online':'offline'}" title="${online?'在線':'離線'}"></span>`;
+   let online = false;
+   if (p.isOfflineBot) {
+     online = false;
+   } else if (roomData.presence && roomData.presence[id]) {
+     const pr = roomData.presence[id];
+     const now = Date.now();
+     const lastSeen = typeof pr.lastSeen === 'number' ? pr.lastSeen : now;
+     online = pr.online && (now - lastSeen < 15000);
+   }
+
+   const dotClass = online ? 'online' : 'offline';
+   const dotTitle = online ? '線上' : '離線';
 
    let emojiOverlayHtml = "";
-   if (p.currentEmoji && p.emojiTime && (now - p.emojiTime < 2000)) {
+   if (p.currentEmoji && p.emojiTime && (Date.now() - p.emojiTime < 2000)) {
      emojiOverlayHtml = `<div class="player-emoji-overlay">${p.currentEmoji}</div>`;
    }
 
-   const isTalkingClass = activeTalkingPlayers.has(id) ? "talking" : "";
-   const isWinnerGlowClass = p.status === "win" ? "winner-glow" : "";
+   let kickBtnHtml = "";
+   if (viewMode === "admin") {
+     kickBtnHtml = `<button class="danger kick-btn" onclick="event.stopPropagation(); kickPlayer('${id}', '${esc(p.name)}')">移除</button>`;
+   }
 
-   return `<div id="player_card_${id}" class="player ${(id===playerId?"me ":"")+(p.index===roomData.turn&&roomData.status==="playing"?"turn ":"")+isTalkingClass} ${isWinnerGlowClass}">
-     ${emojiOverlayHtml}
-     ${kickBtn}
-     <div class="name">${dotHtml} 對戰位 #${(p.index+1)}. ${esc(p.name)}</div>
-     <div class="state">${state} ｜ 勝場: ${p.wins||0}/${targetWins} ｜ 線數: ${lines}/${targetLines}條</div>
-   </div>`;
- }).join("");
+   const winsCount = p.wins || 0;
+   const targetWinsMax = Number(roomData.targetWins || 4);
 
- const turn=ps.find(x=>Number(x[1].index)===Number(roomData.turn));
- if (roomData.status === "ended") {
-   el("turnText").textContent = `本桌賽事已分出勝負！`;
-   el("roundText").textContent = "勝者已自動晉級下一輪樹狀賽事！";
- } else if (roomData.status === "round_ended") {
-   el("turnText").textContent = "本局已結束！";
-   el("roundText").textContent = "發光結算中，即將進入下一局...";
- } else {
-   el("turnText").textContent= roomData.status==="playing" && turn ? "輪到叫號："+turn[1].name : "等待對手加入...";
-   el("roundText").textContent= roomData.status==="playing" ? `遊戲進行中 (第 ${roomData.currentGameRound || 1} 局)` : "等待對手加入後自動開局...";
- }
+   pHtml += `
+     <div id="player_card_${id}" class="${cardClass}">
+       ${kickBtnHtml}
+       ${emojiOverlayHtml}
+       <div class="name">
+         <span class="status-dot ${dotClass}" title="${dotTitle}"></span>
+         ${esc(p.name)} ${isMe ? '(你)' : ''}
+       </div>
+       <div class="state">
+         已勝: <b>${winsCount} / ${targetWinsMax}</b> 場 ｜ ${p.status === 'win' ? '🔥 本局獲勝！' : (isMyTurn ? '👉 叫號中...' : '等待中')}
+       </div>
+     </div>
+   `;
+ });
+ el("players").innerHTML = pHtml;
 
- if (roomData.status === "playing" && roomData.turnStartTime !== lastTurnStartTime) {
-   lastTurnStartTime = roomData.turnStartTime;
+ const currPlayerEntry = playerEntries.find(([id, p]) => Number(p.index) === currentTurn);
+ if (currPlayerEntry) {
+   const [currId, currP] = currPlayerEntry;
+   el("turnText").textContent = `輪到：${currP.name} 叫號`;
    startTurnTimer();
- } else if (roomData.status !== "playing") {
-   if (turnTimer) clearInterval(turnTimer);
-   if (el("timerBox")) el("timerBox").textContent = "";
+ } else {
+   el("turnText").textContent = `等待玩家加入...`;
+   if(el("timerBox")) el("timerBox").textContent = "";
  }
 
- renderHand();
- renderDiscards();
- renderLog();
- renderLB();
-}
-
-function renderHand(){
- const isAdminView=(viewMode==="admin");
- const h= isAdminView ? [] : ((roomData.hands||{})[playerId]||[]);
- const markedSet = (roomData.marked||{})[playerId] || [];
- const calledSet = roomData.calledNumbers || [];
- const gridSize = Number(roomData.gridSize || 5);
- const isTurn= !isAdminView && roomData.status==="playing" && roomData.players?.[playerId]?.index===roomData.turn;
- const targetWins = Number(roomData.targetWins || 4);
-
- if(isAdminView){
-   el("myHand").innerHTML='<span style="color:#fff;font-weight:800">管理員觀看模式</span>';
-   el("actions").innerHTML="";
-   return;
+ if (roomData.status === "waiting") {
+   el("roundText").textContent = "等待對手加入中 (滿2人自動開局)...";
+ } else if (roomData.status === "round_ended") {
+   el("roundText").textContent = `第 ${(roomData.currentGameRound || 1) - 1} 局已結束！`;
+ } else if (roomData.status === "ended") {
+   el("roundText").textContent = "🏆 本輪晉級賽已分出最終勝負！";
+ } else {
+   el("roundText").textContent = `對戰進行中 (每回合 15 秒)`;
  }
 
- if(roomData.status === "ended"){
-   el("myHand").innerHTML=`<span style="color:#fff;font-weight:800">🎉 本賽局已分出勝負 (目標 ${targetWins} 勝)</span>`;
-   el("actions").innerHTML="";
-   return;
- }
-
- if(roomData.status === "round_ended"){
-   el("myHand").innerHTML='<span style="color:#fff;font-weight:800">🎉 本局結算中 (請欣賞贏家發光特效)</span>';
-   el("actions").innerHTML='<span>請稍候，即將自動開始下一局...</span>';
-   return;
- }
-
- const handEl = el("myHand");
- handEl.style.gridTemplateColumns = `repeat(${gridSize}, auto)`;
- 
- let tileSize = '46px';
- let fontSize = '16px';
- if (gridSize === 3) { tileSize = '64px'; fontSize = '22px'; }
- else if (gridSize === 4) { tileSize = '54px'; fontSize = '19px'; }
- else if (gridSize === 5) { tileSize = '44px'; fontSize = '16px'; }
- else if (gridSize === 6) { tileSize = '38px'; fontSize = '14px'; }
- else if (gridSize === 7) { tileSize = '33px'; fontSize = '13px'; }
- else if (gridSize === 8) { tileSize = '29px'; fontSize = '12px'; }
- else if (gridSize === 9) { tileSize = '26px'; fontSize = '11px'; }
-
- handEl.innerHTML=h.length
-   ? h.map(num=>{
-       const isMarked = markedSet.includes(num);
-       const isCalled = calledSet.includes(num);
-       const isSel = selectedSet.has(num);
-       return `<div class="tile ${isMarked?'marked':''} ${isSel?'selected':''}" style="width:${tileSize};height:${tileSize};font-size:${fontSize};" onclick="toggleCard(${num})"><div>${num}</div></div>`;
-     }).join("")
-   : '<span style="color:#fff;font-weight:800">等待對手加入，即將自動開局…</span>';
-
- let a="";
- if(isTurn){
-   a += `<button class="gray" onclick="clearSelection()">重選號碼</button>`;
-   a += `<button class="success" onclick="playCards()">確認叫號 (${Array.from(selectedSet)[0] || '未選'})</button>`;
- }else if(roomData.status==="playing"){
-   a='<span>等待對手叫號…</span>';
- }
- el("actions").innerHTML=a;
-}
-
-function renderDiscards(){
- const lp = roomData.lastPlay;
  const called = roomData.calledNumbers || [];
- if (!lp || called.length === 0) {
-   el("discards").innerHTML = '<span style="color:#ddd;font-size:14px;">尚無叫號紀錄（輪流叫出未被喊過的數字）</span>';
-   return;
+ el("discards").innerHTML = called.length === 0 ? '<span style="font-size:13px;color:#e2e8f0">尚無叫號紀錄</span>' : called.map(n => `<span style="background:#fff;color:#1e293b;padding:3px 8px;border-radius:6px;font-weight:bold;font-size:13px">${n}</span>`).join(" ");
+
+ const me = players[playerId];
+ const myCard = roomData.hands?.[playerId] || [];
+ const myMarked = roomData.marked?.[playerId] || [];
+ const gridSize = Number(roomData.gridSize || 5);
+
+ if (myCard.length > 0) {
+   let gridCss = `grid-template-columns: repeat(${gridSize}, 1fr);`;
+   let tileSize = gridSize >= 8 ? '36px' : gridSize >= 6 ? '44px' : '52px';
+   let fontSize = gridSize >= 8 ? '13px' : gridSize >= 6 ? '15px' : '18px';
+
+   let handHtml = `<div class="hand" style="${gridCss}">`;
+   myCard.forEach(num => {
+     const isMarked = myMarked.includes(num);
+     const isSelected = selectedSet.has(num);
+     const tileClass = `tile ${isMarked ? 'marked' : ''} ${isSelected ? 'selected' : ''}`;
+     
+     let colorClass = "";
+     if (!isMarked && num <= Math.ceil(gridSize * gridSize / 2)) {
+       colorClass = "red";
+     }
+
+     handHtml += `
+       <div class="${tileClass} ${colorClass}" style="width:${tileSize}; height:${tileSize}; font-size:${fontSize};" onclick="toggleCard(${num})">
+         ${num}
+       </div>
+     `;
+   });
+   handHtml += `</div>`;
+   el("myHand").innerHTML = handHtml;
+ } else {
+   el("myHand").innerHTML = '<div style="font-size:13px;color:#e2e8f0">等待發牌...</div>';
  }
- const recentCalled = called.slice(-6);
- el("discards").innerHTML = recentCalled.map(num => {
-   return `<div class="tile smalltile" style="background:#fde68a; color:#111; font-weight:bold;">${num}</div>`;
- }).join("") + `<div style="width:100%;text-align:center;font-size:12px;color:#fde68a;margin-top:4px;">最新叫號者：${esc(lp.playerName)} (數字: ${lp.num})</div>`;
+
+ let actionHtml = "";
+ const isMyTurn = currPlayerEntry && currPlayerEntry[0] === playerId && roomData.status === "playing";
+ 
+ if (viewMode === "player" && roomData.status === "playing") {
+   if (isMyTurn) {
+     actionHtml += `<button class="primary" onclick="playCards()">確定叫號 (${selectedSet.size}/1)</button>`;
+     actionHtml += `<button class="gray" onclick="clearSelection()">清除選取</button>`;
+   } else {
+     actionHtml += `<span style="font-size:14px;color:#e2e8f0;font-weight:bold">等待對手叫號中...</span>`;
+   }
+ } else if (viewMode === "admin" && roomData.status === "round_ended") {
+   actionHtml += `<button class="primary" style="font-size:15px;padding:10px 24px;" onclick="nextRound()">▶️ 進入下一局 (自動發牌)</button>`;
+ } else if (roomData.status === "ended") {
+   actionHtml += `<span style="font-size:15px;color:#fde047;font-weight:bold">🏆 本輪賽事已結束！勝者已自動晉級下一輪房間。</span>`;
+ }
+ el("actions").innerHTML = actionHtml;
+
+ el("log").innerHTML = (roomData.logs || []).slice(-30).reverse().map(l => `<div>• ${esc(l)}</div>`).join("");
+
+ renderLeaderboard(players);
 }
 
-function renderLog(){el("log").innerHTML=(roomData.logs||[]).slice().reverse().map(x=>"<div>"+esc(x)+"</div>").join("")}
-function renderLB(){
-  let ps=Object.values(roomData.players||{}).sort((a,b)=>(b.wins||0)-(a.wins||0));
-  const targetWins = Number(roomData.targetWins || 4);
-  el("leaderboard").innerHTML="<table><tr><th>選手</th><th>勝場 (目標 "+targetWins+" 勝)</th></tr>"+ps.map(p=>"<tr><td>"+esc(p.name)+"</td><td>"+(p.wins||0)+" / "+targetWins+"</td></tr>").join("")+"</table>";
+function renderLeaderboard(players) {
+  const entries = Object.values(players || {}).sort((a,b) => (b.wins || 0) - (a.wins || 0));
+  let lbHtml = `
+    <div class="lb">
+      <table>
+        <tr><th>排名</th><th>選手暱稱</th><th>累積勝場數</th><th>狀態</th></tr>
+  `;
+  entries.forEach((p, idx) => {
+    lbHtml += `
+      <tr>
+        <td>#${idx + 1}</td>
+        <td><b>${esc(p.name)}</b></td>
+        <td>${p.wins || 0} 勝</td>
+        <td>${p.status === 'win' || p.wins >= (roomData.targetWins || 4) ? '🏆 晉級/獲勝' : '對戰中'}</td>
+      </tr>
+    `;
+  });
+  lbHtml += `</table></div>`;
+  el("leaderboard").innerHTML = lbHtml;
 }
-function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 </script>
 </body>
 </html>
